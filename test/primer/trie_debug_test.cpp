@@ -2,9 +2,11 @@
 #include <zipfian_int_distribution.h>
 #include <bitset>
 #include <functional>
+#include <memory>
 #include <numeric>
 #include <optional>
 #include <random>
+#include <stack>
 #include <thread>  // NOLINT
 
 #include "common/exception.h"
@@ -20,8 +22,11 @@ TEST(TrieDebugger, TestCase) {
   zipfian_int_distribution<uint32_t> dis(0, 1000);
 
   auto trie = Trie();
+  auto t = 0;
   for (uint32_t i = 0; i < 100; i++) {
     std::string key = fmt::format("{}", dis(gen));
+    std::cout << "key: " << key << std::endl;
+    if (key.back() == '9') t++;
     auto value = dis(gen);
     switch (i) {
       // Test the first 3 values from the random generator.
@@ -39,7 +44,21 @@ TEST(TrieDebugger, TestCase) {
     }
     trie = trie.Put<uint32_t>(key, value);
   }
+  int childCnt = 0;
 
+  auto r = trie.GetRoot();
+  std::stack<std::shared_ptr<const TrieNode>> stk;
+  stk.push(r);
+
+  while (!stk.empty()) {
+    auto t = stk.top();
+    stk.pop();
+    childCnt += t->children_.size();
+    for (auto &p : t->children_) {
+      stk.push(p.second);
+    }
+  }
+  std::cout << "childCnt: " << childCnt << std::endl;
   // Put a breakpoint here.
 
   // (1) How many children nodes are there on the root?
