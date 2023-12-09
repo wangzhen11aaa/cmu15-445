@@ -12,28 +12,34 @@
 
 #pragma once
 
+#include <chrono>
 #include <limits>
 #include <list>
 #include <mutex>  // NOLINT
 #include <unordered_map>
 #include <vector>
-
 #include "common/config.h"
 #include "common/macros.h"
-
 namespace bustub {
 
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
+ public:
+  LRUKNode() = default;
+  explicit LRUKNode(size_t ts, frame_id_t frame_id) : history_{ts}, fid_(frame_id){};
+
  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
 
-  [[maybe_unused]] std::list<size_t> history_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] frame_id_t fid_;
-  [[maybe_unused]] bool is_evictable_{false};
+  // list_head-> list{ts0} -> list{ts1} -> ...-> , ts0 > ts1
+  std::list<size_t> history_;
+  size_t k_{1};
+  frame_id_t fid_;
+  bool is_evictable_{false};
+  // Declared KRUKReplacer friend class.
+  friend class LRUKReplacer;
 };
 
 /**
@@ -65,7 +71,7 @@ class LRUKReplacer {
    *
    * @brief Destroys the LRUReplacer.
    */
-  ~LRUKReplacer() = default;
+  ~LRUKReplacer();
 
   /**
    * TODO(P1): Add implementation
@@ -98,7 +104,7 @@ class LRUKReplacer {
    * @param access_type type of access that was received. This parameter is only needed for
    * leaderboard tests.
    */
-  void RecordAccess(frame_id_t frame_id, AccessType access_type = AccessType::Unknown);
+  void RecordAccess(frame_id_t frame_id, AccessType access_type = AccessType::Unknown) noexcept;
 
   /**
    * TODO(P1): Add implementation
@@ -147,15 +153,51 @@ class LRUKReplacer {
    */
   auto Size() -> size_t;
 
+  /**
+   * @brief: Get the current timestamp.
+   * @return size_t
+   */
+  inline size_t GetCurrentTimestamp() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+  }
+
+  /**
+   * @brief get node's distance
+   * @return size_t
+   */
+  inline size_t NodeDistance(LRUKNode &node) {
+    assert(node.k_ <= k_);
+
+    if (node.k_ < k_)
+      return k_ + 1;
+    else
+      return k_;
+  }
+
+  /**
+   * @brief get node's minimum timestamp
+   * @ return size_t
+   */
+  inline size_t NodeMinimumTimestamp(LRUKNode &node) {
+    assert(node.history_.size() > 0);
+
+    return node.history_.back();
+  }
+
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
+  std::unordered_map<frame_id_t, LRUKNode> node_store_;
   [[maybe_unused]] size_t current_timestamp_{0};
-  [[maybe_unused]] size_t curr_size_{0};
-  [[maybe_unused]] size_t replacer_size_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] std::mutex latch_;
+  size_t curr_size_{0};
+  size_t replacer_size_;
+  size_t k_;
+  std::mutex latch_;
+
+  // ToDO: track the one should be envicitable node.
+  // Arr[Node] = [Node_0, Node_1, ..., Node_t,... Node_m, Node_m+1, ...]
+  // 其中Node_n.distance >= Node_n+1.distance && Node_n.ts <= Node_n+1.ts
 };
 
 }  // namespace bustub

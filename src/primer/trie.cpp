@@ -63,7 +63,7 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
       return Trie{newRootWithV};
     }
     // newRoot = std::make_shared<TrieNode>(std::move(root_->Clone()->children_));
-    newRoot = shared_ptr<TrieNode>{std::move(root_->Clone())};
+    newRoot = shared_ptr<TrieNode>{root_->Clone()};
   }
 
   shared_ptr<TrieNode> cursorRoot{};
@@ -121,7 +121,7 @@ auto Trie::Remove(std::string_view key) const -> Trie {
   }
 
   // Copy-On_Write
-  auto newRoot = shared_ptr<TrieNode>(std::move(root_->Clone()));
+  auto newRoot = shared_ptr<TrieNode>(root_->Clone());
 
   shared_ptr<TrieNode> parent = newRoot;
   shared_ptr<TrieNode> curRoot{};
@@ -137,7 +137,7 @@ auto Trie::Remove(std::string_view key) const -> Trie {
     // key Existing in the path, Clone.
     if (parent->children_.count(curIndex)) {
       // curRoot = make_shared<TrieNode>(std::move(parent->children_[curIndex]->Clone()->children_));
-      curRoot = shared_ptr<TrieNode>(std::move(parent->children_[curIndex]->Clone()));
+      curRoot = shared_ptr<TrieNode>(parent->children_[curIndex]->Clone());
       parent->children_[curIndex] = curRoot;
       parent = curRoot;
     } else {
