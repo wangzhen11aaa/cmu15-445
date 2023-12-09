@@ -36,10 +36,10 @@ void TrieStore::Put(std::string_view key, T value) {
   write_lock_.lock();
   root_lock_.lock();
   Trie trie = root_;
+  root_lock_.unlock();
 
   root_ = trie.Put<T>(key, std::move(value));
 
-  root_lock_.unlock();
   write_lock_.unlock();
 }
 
