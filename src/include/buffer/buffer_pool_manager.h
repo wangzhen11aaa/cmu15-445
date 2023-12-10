@@ -204,9 +204,98 @@ class BufferPoolManager {
    * @param page_id id of the page to deallocate
    */
   void DeallocatePage(__attribute__((unused)) page_id_t page_id) {
+    std::cout << "page_id " << page_id << " is deallocated";
     // This is a no-nop right now without a more complex data structure to track deallocated pages
   }
 
   // TODO(student): You may add additional private members and helper functions
+  /**
+   * @brief Setup new page frame, setup mapping at last.
+   * @param Page page
+   * @param page_id_t page_id
+   * @param frame_id_t pageFrameIdToReuse
+   */
+  void SetUpPage(Page &page, page_id_t pageId, frame_id_t pageFrameIdToReuse) {
+    // Set the mapping in the replacer_.
+    replacer_->RecordAccess(pageFrameIdToReuse, AccessType::Unknown);
+
+    page.page_id_ = pageId;
+    page.pin_count_ = 1;
+    page.is_dirty_ = false;
+
+    page_table_[pageId] = pageFrameIdToReuse;
+  }
+
+  /**
+   * @brief Reuse the page frame, setup mapping at last.
+   * @param Page page
+   * @param page_id_t page_id
+   * @param frame_id_t pageFrameIdToReuse
+   */
+  void ReUsePage(Page &page, page_id_t pageId, frame_id_t pageFrameIdToReuse) {
+    // clear the conent in the replacer.
+    replacer_->SetEvictable(pageFrameIdToReuse, false);
+    replacer_->node_store_[pageFrameIdToReuse].history_.clear();
+    replacer_->node_store_[pageFrameIdToReuse].k_ = 1;
+
+    page.page_id_ = pageId;
+    page.pin_count_ = 1;
+
+    page_table_[pageId] = pageFrameIdToReuse;
+  }
+
+  /**
+   * @brief Write Dirty page to disk synchronously.
+   * @param Page id of the page to write back.
+   */
+  void WritePageBack(Page &page) {
+    auto promise = disk_scheduler_->CreatePromise();
+    auto future = promise.get_future();
+    disk_scheduler_->Schedule({true, page.GetData(), page.GetPageId(), std::move(promise)});
+    auto writeFlag = future.get();
+    if (writeFlag) {
+      std::cout << "Write #page:" << page.GetPageId() << " success \n";
+    } else {
+      std::cout << "Write #page:" << page.GetPageId() << " failed \n";
+    }
+  }
+
+  /**
+   * @brief Read Page from disk synchronously.
+   * @param Page
+   *
+   */
+  void ReadPage(Page &page) {
+    auto promise = disk_scheduler_->CreatePromise();
+    auto future = promise.get_future();
+    disk_scheduler_->Schedule({false, page.GetData(), page.GetPageId(), std::move(promise)});
+    auto readFlag = future.get();
+    if (readFlag) {
+      std::cout << "Read #page:" << page.GetPageId() << " success \n";
+    } else {
+      std::cout << "Read #page:" << page.GetPageId() << " failed \n";
+    }
+  }
+  /**
+   * @brief Reset Page, remove mapping in the bpm.
+   *
+   */
+  void ResetPage(Page &page) {
+    page.is_dirty_ = 0;
+    page.page_id_ = INVALID_PAGE_ID;
+    page.pin_count_ = 0;
+  }
+
+  /**
+   * @brief Get a unused page frame from free list to use, used must with mutex.
+   *
+   */
+  Page *FetchEmptyPageFrameFromFL(frame_id_t &freePageFrameId);
+
+  /**
+   * @brief Get a unused page via evicting a page frame.
+   *
+   */
+  Page *FetchEmptyPageFrameViaEvict(frame_id_t *freePageFrameId);
 };
 }  // namespace bustub

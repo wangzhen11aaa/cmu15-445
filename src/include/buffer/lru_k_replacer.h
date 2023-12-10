@@ -40,6 +40,7 @@ class LRUKNode {
   bool is_evictable_{false};
   // Declared KRUKReplacer friend class.
   friend class LRUKReplacer;
+  friend class BufferPoolManager;
 };
 
 /**
@@ -159,7 +160,7 @@ class LRUKReplacer {
    */
   inline size_t GetCurrentTimestamp() {
     using namespace std::chrono;
-    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    return duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count();
   }
 
   /**
@@ -180,8 +181,9 @@ class LRUKReplacer {
    * @ return size_t
    */
   inline size_t NodeMinimumTimestamp(LRUKNode &node) {
-    assert(node.history_.size() > 0);
-
+    if (node.history_.size() == 0) {
+      return 0l;
+    }
     return node.history_.back();
   }
 
@@ -195,6 +197,7 @@ class LRUKReplacer {
   size_t k_;
   std::mutex latch_;
 
+  friend class BufferPoolManager;
   // ToDO: track the one should be envicitable node.
   // Arr[Node] = [Node_0, Node_1, ..., Node_t,... Node_m, Node_m+1, ...]
   // 其中Node_n.distance >= Node_n+1.distance && Node_n.ts <= Node_n+1.ts

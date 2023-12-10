@@ -3,7 +3,11 @@
 
 namespace bustub {
 
-BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {}
+BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {
+  bpm_ = std::move(that.bpm_);
+  is_dirty_ = std::move(that.is_dirty_);
+  page_ = std::move(that.page_);
+}
 
 void BasicPageGuard::Drop() {}
 
