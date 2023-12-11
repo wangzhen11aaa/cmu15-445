@@ -254,9 +254,9 @@ class BufferPoolManager {
     disk_scheduler_->Schedule({true, page.GetData(), page.GetPageId(), std::move(promise)});
     auto writeFlag = future.get();
     if (writeFlag) {
-      std::cout << "Write #page:" << page.GetPageId() << " success \n";
+      std::cout << "Write data #page:" << page.GetPageId() << " success \n";
     } else {
-      std::cout << "Write #page:" << page.GetPageId() << " failed \n";
+      std::cout << "Write data #page:" << page.GetPageId() << " failed \n";
     }
   }
 

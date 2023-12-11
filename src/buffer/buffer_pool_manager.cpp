@@ -88,19 +88,16 @@ auto BufferPoolManager::FetchEmptyPageFrameFromFL(frame_id_t &freePageFrameId) -
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType access_type) -> Page * {
   // If it is in the page_table_, return directly.
-  latch_.lock();
+  std::lock_guard<std::mutex> lock(latch_);
   // Exists one page_frame_id mapped with page_id, not in buffer pool now.
   if (page_table_.count(page_id)) {
     auto pageFrameToUse = page_table_[page_id];
     // It is safe to refer to this page frame.
     pages_[pageFrameToUse].pin_count_++;
-    latch_.unlock();
     return pages_ + page_id;
   } else {
-    latch_.unlock();
     // Get a empty page frame to use, maybe evict page.
     if (free_list_.empty() && replacer_->Size() == 0) {
-      latch_.unlock();
       return nullptr;
     }
     frame_id_t freePageFrameId;
@@ -108,7 +105,6 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType
     auto emptyPagePtr = FetchEmptyPageFrameFromFL(freePageFrameId);
     if (emptyPagePtr) {
       SetUpPage(pages_[freePageFrameId], page_id, freePageFrameId);
-      latch_.unlock();
       return emptyPagePtr;
     } else {
       emptyPagePtr = FetchEmptyPageFrameViaEvict(&freePageFrameId);
@@ -121,7 +117,6 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType
 
       ReUsePage(pages_[freePageFrameId], page_id, freePageFrameId);
       ReadPage(*emptyPagePtr);
-      latch_.unlock();
       return emptyPagePtr;
     }
   }
