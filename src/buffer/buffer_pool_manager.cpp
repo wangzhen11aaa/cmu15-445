@@ -197,11 +197,22 @@ auto BufferPoolManager::AllocatePage() -> page_id_t {
   return next_page_id_++;
 }
 
-auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard { return {this, nullptr}; }
+auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
+  auto pagePtr = FetchPage(page_id);
+  return {this, pagePtr};
+}
 
-auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard { return {this, nullptr}; }
+auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
+  auto pagePtr = FetchPage(page_id);
+  return {this, pagePtr};
+  // return {this, nullptr};
+}
 
-auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard { return {this, nullptr}; }
+auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
+  auto pagePtr = FetchPage(page_id);
+  return {this, pagePtr};
+  // return {this, nullptr};
+}
 
 auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
   auto page = NewPage(page_id);
