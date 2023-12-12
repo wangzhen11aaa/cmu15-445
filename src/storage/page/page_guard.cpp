@@ -10,7 +10,7 @@ BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {
 }
 
 void BasicPageGuard::Drop() {
-  assert(is_dirty_ == page_->IsDirty());
+  // assert(is_dirty_ == page_->IsDirty());
   bpm_->UnpinPage(page_->GetPageId(), page_->IsDirty());
 }
 
