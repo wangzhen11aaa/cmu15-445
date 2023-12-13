@@ -17,6 +17,12 @@ class BasicPageGuard {
   BasicPageGuard(const BasicPageGuard &) = delete;
   auto operator=(const BasicPageGuard &) -> BasicPageGuard & = delete;
 
+  /**
+   * @brief IsNull -> bool check if the page_ is nullptr or not.
+   *
+   */
+  bool IsNull() { return page_ != nullptr; }
+
   /** TODO(P2): Add implementation
    *
    * @brief Move constructor for BasicPageGuard
@@ -118,6 +124,12 @@ class ReadPageGuard {
   ReadPageGuard(const ReadPageGuard &) = delete;
   auto operator=(const ReadPageGuard &) -> ReadPageGuard & = delete;
 
+  /**
+   * @brief IsNull -> bool check if the page_ is nullptr or not.
+   *
+   */
+  bool IsNull() { return guard_.page_ != nullptr; }
+
   /** TODO(P2): Add implementation
    *
    * @brief Move constructor for ReadPageGuard
@@ -177,6 +189,12 @@ class WritePageGuard {
   WritePageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {}
   WritePageGuard(const WritePageGuard &) = delete;
   auto operator=(const WritePageGuard &) -> WritePageGuard & = delete;
+
+  /**
+   * @brief IsNull -> bool check if the page_ is nullptr or not.
+   *
+   */
+  bool IsNull() { return guard_.page_ != nullptr; }
 
   /** TODO(P2): Add implementation
    *

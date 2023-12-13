@@ -131,7 +131,7 @@ class DiskExtendibleHashTable {
   uint32_t header_max_depth_;
   uint32_t directory_max_depth_;
   uint32_t bucket_max_size_;
-  page_id_t header_page_id_;
+  page_id_t header_page_id_{INVALID_PAGE_ID};
 };
 
 }  // namespace bustub

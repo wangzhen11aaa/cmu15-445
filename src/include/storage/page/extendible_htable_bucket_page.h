@@ -131,6 +131,12 @@ class ExtendibleHTableBucketPage {
    */
   void PrintBucket() const;
 
+  /**
+   * @brief set size_;
+   *
+   */
+  void setSize(int size) { size_ = size; }
+
  private:
   uint32_t size_;
   uint32_t max_size_;

@@ -35,12 +35,12 @@ auto ExtendibleHTableDirectoryPage::HashToBucketIndex(uint32_t hash) const -> ui
 }
 
 auto ExtendibleHTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) const -> page_id_t {
-  assert(bucket_idx >= 0 && bucket_idx < HTABLE_DIRECTORY_ARRAY_SIZE);
+  assert(bucket_idx >= 0 && bucket_idx < (1 << (global_depth_)));
   return bucket_page_ids_[bucket_idx];
 }
 
 void ExtendibleHTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id_t bucket_page_id) {
-  assert(bucket_idx >= 0 && bucket_idx < HTABLE_DIRECTORY_ARRAY_SIZE);
+  assert(bucket_idx >= 0 && bucket_idx < (1 << (global_depth_)));
   bucket_page_ids_[bucket_idx] = bucket_page_id;
 }
 // For {0..1} k-length bits (#2^global_depth),

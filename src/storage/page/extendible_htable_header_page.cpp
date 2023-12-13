@@ -16,13 +16,18 @@
 
 namespace bustub {
 
-void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) { max_depth_ = max_depth; }
+void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) {
+  max_depth_ = max_depth;
+  for (uint32_t i = 0; i < HTABLE_HEADER_ARRAY_SIZE; i++) {
+    directory_page_ids_[i] = INVALID_PAGE_ID;
+  }
+}
 
 auto ExtendibleHTableHeaderPage::HashToDirectoryIndex(uint32_t hash) const -> uint32_t {
   return (hash >> (sizeof(hash) * 8 - max_depth_));
 }
 
-auto ExtendibleHTableHeaderPage::GetDirectoryPageId(uint32_t directory_idx) const -> uint32_t {
+auto ExtendibleHTableHeaderPage::GetDirectoryPageId(uint32_t directory_idx) const -> page_id_t {
   return directory_page_ids_[directory_idx];
 }
 
