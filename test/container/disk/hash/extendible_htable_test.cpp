@@ -23,7 +23,7 @@
 namespace bustub {
 
 // NOLINTNEXTLINE
-TEST(ExtendibleHTableTest, DISABLED_InsertTest1) {
+TEST(ExtendibleHTableTest, InsertTest1) {
   auto disk_mgr = std::make_unique<DiskManagerUnlimitedMemory>();
   auto bpm = std::make_unique<BufferPoolManager>(50, disk_mgr.get());
 
@@ -42,13 +42,13 @@ TEST(ExtendibleHTableTest, DISABLED_InsertTest1) {
   }
 
   ht.VerifyIntegrity();
-
+  ht.PrintHT();
   // attempt another insert, this should fail because table is full
   ASSERT_FALSE(ht.Insert(num_keys, num_keys));
 }
 
 // NOLINTNEXTLINE
-TEST(ExtendibleHTableTest, DISABLED_InsertTest2) {
+TEST(ExtendibleHTableTest, InsertTest2) {
   auto disk_mgr = std::make_unique<DiskManagerUnlimitedMemory>();
   auto bpm = std::make_unique<BufferPoolManager>(50, disk_mgr.get());
 
@@ -65,7 +65,7 @@ TEST(ExtendibleHTableTest, DISABLED_InsertTest2) {
     ASSERT_EQ(1, res.size());
     ASSERT_EQ(i, res[0]);
   }
-
+  ht.PrintHT();
   ht.VerifyIntegrity();
 
   // check that they were actually inserted
@@ -77,6 +77,7 @@ TEST(ExtendibleHTableTest, DISABLED_InsertTest2) {
     ASSERT_EQ(i, res[0]);
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 
   // try to get some keys that don't exist/were not inserted
@@ -87,11 +88,12 @@ TEST(ExtendibleHTableTest, DISABLED_InsertTest2) {
     ASSERT_EQ(0, res.size());
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 }
 
 // NOLINTNEXTLINE
-TEST(ExtendibleHTableTest, DISABLED_RemoveTest1) {
+TEST(ExtendibleHTableTest, RemoveTest1) {
   auto disk_mgr = std::make_unique<DiskManagerUnlimitedMemory>();
   auto bpm = std::make_unique<BufferPoolManager>(50, disk_mgr.get());
 
@@ -109,6 +111,7 @@ TEST(ExtendibleHTableTest, DISABLED_RemoveTest1) {
     ASSERT_EQ(i, res[0]);
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 
   // check that they were actually inserted
@@ -120,6 +123,7 @@ TEST(ExtendibleHTableTest, DISABLED_RemoveTest1) {
     ASSERT_EQ(i, res[0]);
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 
   // try to get some keys that don't exist/were not inserted
@@ -130,6 +134,7 @@ TEST(ExtendibleHTableTest, DISABLED_RemoveTest1) {
     ASSERT_EQ(0, res.size());
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 
   // remove the keys we inserted
@@ -141,6 +146,7 @@ TEST(ExtendibleHTableTest, DISABLED_RemoveTest1) {
     ASSERT_EQ(0, res.size());
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 
   // try to remove some keys that don't exist/were not inserted
@@ -153,6 +159,7 @@ TEST(ExtendibleHTableTest, DISABLED_RemoveTest1) {
     ASSERT_EQ(0, res.size());
   }
 
+  ht.PrintHT();
   ht.VerifyIntegrity();
 }
 

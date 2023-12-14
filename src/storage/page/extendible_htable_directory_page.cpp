@@ -24,7 +24,7 @@ void ExtendibleHTableDirectoryPage::Init(uint32_t max_depth) {
   max_depth_ = max_depth;
   // 0 <= local_depth_i <= global_depth, 0 <= i < HTABLE_DIRECTORY_ARRAY_SIZE;
   global_depth_ = 0;
-  for (uint64_t i = 0; i < HTABLE_DIRECTORY_ARRAY_SIZE; i++) {
+  for (uint64_t i = 0; i < static_cast<uint32_t>(0x1 << max_depth); i++) {
     local_depths_[i] = 0;
     bucket_page_ids_[i] = INVALID_PAGE_ID;
   }
@@ -35,7 +35,6 @@ auto ExtendibleHTableDirectoryPage::HashToBucketIndex(uint32_t hash) const -> ui
 }
 
 auto ExtendibleHTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) const -> page_id_t {
-  assert(bucket_idx >= 0 && bucket_idx < (1 << (global_depth_)));
   return bucket_page_ids_[bucket_idx];
 }
 
@@ -49,6 +48,10 @@ void ExtendibleHTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id
 // For example, 00b's imgage will be 100b.
 auto ExtendibleHTableDirectoryPage::GetSplitImageIndex(uint32_t bucket_idx) const -> uint32_t {
   auto remainNum = (((1 << (global_depth_ - 1)) - 1) & bucket_idx);
+  // Special case, when global_depth == 0.
+  if (global_depth_ == 0) {
+    return bucket_idx ? 0 : 1;
+  }
   return (remainNum | ((bucket_idx & (1 << (global_depth_ - 1))) ? 0 : (1 << (global_depth_ - 1))));
 }
 

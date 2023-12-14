@@ -21,7 +21,7 @@ class BasicPageGuard {
    * @brief IsNull -> bool check if the page_ is nullptr or not.
    *
    */
-  bool IsNull() { return page_ != nullptr; }
+  bool IsNull() { return page_ == nullptr; }
 
   /** TODO(P2): Add implementation
    *
@@ -120,7 +120,12 @@ class BasicPageGuard {
 class ReadPageGuard {
  public:
   ReadPageGuard() = default;
-  ReadPageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {}
+  ReadPageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {
+    if (guard_.page_) {
+      // std::cout << "ReadPageGuard locked, page_ " << guard_.PageId() << std::endl;
+      guard_.page_->RLatch();
+    }
+  }
   ReadPageGuard(const ReadPageGuard &) = delete;
   auto operator=(const ReadPageGuard &) -> ReadPageGuard & = delete;
 
@@ -128,7 +133,7 @@ class ReadPageGuard {
    * @brief IsNull -> bool check if the page_ is nullptr or not.
    *
    */
-  bool IsNull() { return guard_.page_ != nullptr; }
+  bool IsNull() { return guard_.page_ == nullptr; }
 
   /** TODO(P2): Add implementation
    *
@@ -186,7 +191,12 @@ class ReadPageGuard {
 class WritePageGuard {
  public:
   WritePageGuard() = default;
-  WritePageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {}
+  WritePageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {
+    if (guard_.page_ != nullptr) {
+      // std::cout << "WritePageGuard locked, page_ " << guard_.PageId() << std::endl;
+      guard_.page_->WLatch();
+    }
+  }
   WritePageGuard(const WritePageGuard &) = delete;
   auto operator=(const WritePageGuard &) -> WritePageGuard & = delete;
 
@@ -194,7 +204,7 @@ class WritePageGuard {
    * @brief IsNull -> bool check if the page_ is nullptr or not.
    *
    */
-  bool IsNull() { return guard_.page_ != nullptr; }
+  bool IsNull() { return guard_.page_ == nullptr; }
 
   /** TODO(P2): Add implementation
    *

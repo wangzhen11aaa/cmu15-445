@@ -99,13 +99,13 @@ void ExtendibleHTableBucketPage<K, V, KC>::RemoveAt(uint32_t bucket_idx) {
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::KeyAt(uint32_t bucket_idx) const -> K {
-  assert(bucket_idx >= 0 && bucket_idx && bucket_idx < size_);
+  assert(bucket_idx >= 0 && bucket_idx < size_);
   return array_[bucket_idx].first;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::ValueAt(uint32_t bucket_idx) const -> V {
-  assert(bucket_idx >= 0 && bucket_idx && bucket_idx < size_);
+  assert(bucket_idx >= 0 && bucket_idx < size_);
   return array_[bucket_idx].second;
 }
 
@@ -129,6 +129,9 @@ template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::IsEmpty() const -> bool {
   return size_ == 0;
 }
+
+template <typename K, typename V, typename KC>
+void ExtendibleHTableBucketPage<K, V, KC>::PutAt(int index, std::pair<K, V> &&p) {}
 
 template class ExtendibleHTableBucketPage<int, int, IntComparator>;
 template class ExtendibleHTableBucketPage<GenericKey<4>, RID, GenericComparator<4>>;

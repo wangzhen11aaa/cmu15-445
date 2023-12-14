@@ -135,7 +135,13 @@ class ExtendibleHTableBucketPage {
    * @brief set size_;
    *
    */
-  void setSize(int size) { size_ = size; }
+  void SetSize(int size) { size_ = size; }
+
+  /**
+   * @brief Put {key,value} at index idx.
+   *
+   */
+  void PutAt(int index, std::pair<KeyType, ValueType> &&v);
 
  private:
   uint32_t size_;
