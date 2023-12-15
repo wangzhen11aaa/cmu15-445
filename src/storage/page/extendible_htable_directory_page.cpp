@@ -47,12 +47,12 @@ void ExtendibleHTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id
 // for each new num0', will be the image of num0 of the original.
 // For example, 00b's imgage will be 100b.
 auto ExtendibleHTableDirectoryPage::GetSplitImageIndex(uint32_t bucket_idx) const -> uint32_t {
-  auto remainNum = (((1 << (global_depth_ - 1)) - 1) & bucket_idx);
+  auto remain_num = (((1 << (global_depth_ - 1)) - 1) & bucket_idx);
   // Special case, when global_depth == 0.
   if (global_depth_ == 0) {
     return bucket_idx ? 0 : 1;
   }
-  return (remainNum | ((bucket_idx & (1 << (global_depth_ - 1))) ? 0 : (1 << (global_depth_ - 1))));
+  return (remain_num | ((bucket_idx & (1 << (global_depth_ - 1))) ? 0 : (1 << (global_depth_ - 1))));
 }
 
 auto ExtendibleHTableDirectoryPage::GetGlobalDepth() const -> uint32_t { return global_depth_; }
@@ -62,9 +62,9 @@ void ExtendibleHTableDirectoryPage::IncrGlobalDepth() {
   // Increment the directory, and use each image of original number to fill the pages and local_depth.
   int delta = 1 << (global_depth_ - 1);
   for (auto newIndex = 1 << (global_depth_ - 1); newIndex < (1 << global_depth_); newIndex++) {
-    auto originBucketIndex = newIndex - delta;
-    bucket_page_ids_[newIndex] = bucket_page_ids_[originBucketIndex];
-    local_depths_[newIndex] = local_depths_[originBucketIndex];
+    auto origin_bucket_index = newIndex - delta;
+    bucket_page_ids_[newIndex] = bucket_page_ids_[origin_bucket_index];
+    local_depths_[newIndex] = local_depths_[origin_bucket_index];
   }
 }
 
