@@ -15,11 +15,13 @@ BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {
 
 auto BasicPageGuard::UpgradeRead() -> ReadPageGuard {
   assert(page_ != nullptr);
+  page_->RLatch();
   return ReadPageGuard(this->bpm_, this->page_);
 }
 
 auto BasicPageGuard::UpgradeWrite() -> WritePageGuard {
   assert(page_ != nullptr);
+  page_->WLatch();
   return WritePageGuard(this->bpm_, this->page_);
 }
 

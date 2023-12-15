@@ -123,7 +123,7 @@ class ReadPageGuard {
   ReadPageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {
     if (guard_.page_) {
       // std::cout << "ReadPageGuard locked, page_ " << guard_.PageId() << std::endl;
-      guard_.page_->RLatch();
+      // guard_.page_->RLatch();
     }
   }
   ReadPageGuard(const ReadPageGuard &) = delete;
@@ -194,7 +194,7 @@ class WritePageGuard {
   WritePageGuard(BufferPoolManager *bpm, Page *page) : guard_(bpm, page) {
     if (guard_.page_ != nullptr) {
       // std::cout << "WritePageGuard locked, page_ " << guard_.PageId() << std::endl;
-      guard_.page_->WLatch();
+      // guard_.page_->WLatch();
     }
   }
   WritePageGuard(const WritePageGuard &) = delete;
