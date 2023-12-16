@@ -34,7 +34,10 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       *tuple = tuple_bind;
       *rid = table_iterator_.GetRID();
       ++table_iterator_;
-    } while (tuple_meta.is_deleted_);
+    } while (tuple_meta.is_deleted_ && !table_iterator_.IsEnd());
+    if (tuple_meta.is_deleted_) {
+      return false;
+    }
     return true;
   }
 }
