@@ -29,8 +29,9 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   else {
     TupleMeta tuple_meta;
     do {
-      auto [tuple_meta, tuple_] = table_iterator_.GetTuple();
-      *tuple = tuple_;
+      auto [tuple_meta_bind, tuple_bind] = table_iterator_.GetTuple();
+      tuple_meta = std::move(tuple_meta_bind);
+      *tuple = tuple_bind;
       *rid = table_iterator_.GetRID();
       ++table_iterator_;
     } while (tuple_meta.is_deleted_);
