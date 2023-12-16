@@ -204,7 +204,7 @@ auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
 
 auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
   auto pagePtr = FetchPage(page_id);
-  pagePtr->WLatch();
+  pagePtr->RLatch();
   return {this, pagePtr};
 }
 
