@@ -44,5 +44,14 @@ class IndexScanExecutor : public AbstractExecutor {
  private:
   /** The index scan plan node to be executed. */
   const IndexScanPlanNode *plan_;
+
+  /** Metadata identifying the table that should be updated */
+  const TableInfo *table_info_;
+
+  /** The Index info to update*/
+  IndexInfo *index_info_;
+
+  /** Has been searched*/
+  RID end_rid_{INVALID_PAGE_ID, UINT32_MAX};
 };
 }  // namespace bustub

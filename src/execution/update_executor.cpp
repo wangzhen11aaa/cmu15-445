@@ -17,9 +17,7 @@ namespace bustub {
 
 UpdateExecutor::UpdateExecutor(ExecutorContext *exec_ctx, const UpdatePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {
-  Init();
-}
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {}
 
 void UpdateExecutor::Init() {
   auto *catalog = exec_ctx_->GetCatalog();
@@ -53,7 +51,13 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     auto index_info = indexes_[0];
     std::vector<RID> result;
     if (child_executor_->Next(tuple, rid)) {
-      index_info->index_->ScanKey(*tuple, &result, nullptr);
+      auto index_column_schema = index_info->index_->GetKeySchema();
+      auto index_column_name = index_info->index_->GetKeySchema()->GetColumn(0).GetName();
+      auto index_column_index = index_info->index_->GetKeySchema()->GetColIdx(index_column_name);
+      auto index_column_value = tuple->GetValue(index_column_schema, index_column_index);
+
+      Tuple index_tuple{std::vector<Value>{index_column_value}, index_column_schema};
+      index_info->index_->ScanKey(index_tuple, &result, nullptr);
       if (result.size() == 0) {
         return false;
       }
@@ -61,7 +65,7 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
       // "Mark tuples as deleted, mappings: 1(tuple): 1(rip)"
       for (auto &rid_to_del : result) {
         table_info_->table_->UpdateTupleMeta(negative_meta, rid_to_del);
-        index_info->index_->DeleteEntry(*tuple, rid_to_del, nullptr);
+        index_info->index_->DeleteEntry(index_tuple, rid_to_del, nullptr);
       }
       std::vector<Value> tuple_values;
       auto fields_num = plan_->target_expressions_.size();
@@ -69,9 +73,13 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
         tuple_values.push_back(plan_->target_expressions_[i]->Evaluate(tuple, plan_->OutputSchema()));
       }
       Tuple tuple_to_insert{tuple_values, &(plan_->OutputSchema())};
-      table_info_->table_->InsertTuple(positive_meta, tuple_to_insert);
-      index_info->index_->InsertEntry(tuple_to_insert, *rid, nullptr);
-      return true;
+      std::optional<RID> rid_opt = table_info_->table_->InsertTuple(positive_meta, tuple_to_insert);
+      if (rid_opt.has_value()) {
+        index_info->index_->InsertEntry(tuple_to_insert, rid_opt.value(), nullptr);
+        *rid = rid_opt.value();
+        return true;
+      }
+      return false;
     }
     return false;
   }

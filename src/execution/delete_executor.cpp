@@ -18,9 +18,7 @@ namespace bustub {
 
 DeleteExecutor::DeleteExecutor(ExecutorContext *exec_ctx, const DeletePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {
-  Init();
-}
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {}
 
 void DeleteExecutor::Init() {
   auto *catalog = exec_ctx_->GetCatalog();
@@ -48,7 +46,14 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     auto index_info = indexes_[0];
     std::vector<RID> result;
     if (child_executor_->Next(tuple, rid)) {
-      index_info->index_->ScanKey(*tuple, &result, nullptr);
+      auto index_column_schema = index_info->index_->GetKeySchema();
+      auto index_column_name = index_info->index_->GetKeySchema()->GetColumn(0).GetName();
+      auto index_column_index = index_info->index_->GetKeySchema()->GetColIdx(index_column_name);
+      auto index_column_value = tuple->GetValue(index_column_schema, index_column_index);
+
+      Tuple index_tuple{std::vector<Value>{index_column_value}, index_column_schema};
+
+      index_info->index_->ScanKey(index_tuple, &result, nullptr);
       if (result.size() == 0) {
         return false;
       }
@@ -56,7 +61,7 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
       BUSTUB_ASSERT(result.size() == 1, "tuple not unique in one page");
       for (auto &rid_to_del : result) {
         table_info_->table_->UpdateTupleMeta(negative_meta, rid_to_del);
-        index_info->index_->DeleteEntry(*tuple, rid_to_del, nullptr);
+        index_info->index_->DeleteEntry(index_tuple, rid_to_del, nullptr);
       }
       return true;
     }
