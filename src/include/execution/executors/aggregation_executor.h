@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 #include <utility>
@@ -22,6 +23,7 @@
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
 #include "execution/expressions/abstract_expression.h"
+#include "execution/expressions/column_value_expression.h"
 #include "execution/plans/aggregation_plan.h"
 #include "storage/table/tuple.h"
 #include "type/value_factory.h"
@@ -72,12 +74,58 @@ class SimpleAggregationHashTable {
    */
   void CombineAggregateValues(AggregateValue *result, const AggregateValue &input) {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
+      Value res{ValueFactory::GetIntegerValue(0)};
       switch (agg_types_[i]) {
         case AggregationType::CountStarAggregate:
+          res = ValueFactory::GetIntegerValue(result->aggregates_[i].GetAs<uint32_t>() + input.aggregates_.size());
+          result->aggregates_[i] = result->aggregates_[i].Add(res);
+          break;
         case AggregationType::CountAggregate:
+          res = ValueFactory::GetIntegerValue(std::count_if(std::begin(input.aggregates_), std::end(input.aggregates_),
+                                                            [](const Value &v) { return !v.IsNull(); }));
+          if (result->aggregates_[i].IsNull()) {
+            Swap(result->aggregates_[i], res);
+          } else {
+            result->aggregates_[i] = result->aggregates_[i].Add(res);
+            break;
+          }
         case AggregationType::SumAggregate:
+          std::for_each(std::begin(input.aggregates_), std::end(input.aggregates_), [&](const Value &v0) {
+            if (!v0.IsNull()) {
+              res = res.Add(v0);
+            }
+          });
+          if (result->aggregates_[i].IsNull()) {
+            Swap(result->aggregates_[i], res);
+          } else {
+            result->aggregates_[i] = result->aggregates_[i].Add(res);
+          }
+          break;
         case AggregationType::MinAggregate:
+          res = *(std::min_element(std::begin(input.aggregates_), std::end(input.aggregates_),
+                                   [](const Value &first, const Value &second) {
+                                     return first.CompareLessThan(second) == CmpBool::CmpTrue;
+                                   }));
+          if (result->aggregates_[i].IsNull()) {
+            Swap(result->aggregates_[i], res);
+          } else {
+            if (result->aggregates_[i].CompareGreaterThan(res) == CmpBool::CmpTrue) {
+              Swap(result->aggregates_[i], res);
+            }
+          }
+          break;
         case AggregationType::MaxAggregate:
+          res = *(std::max_element(std::begin(input.aggregates_), std::end(input.aggregates_),
+                                   [](const Value &first, const Value &second) {
+                                     return first.CompareGreaterThan(second) == CmpBool::CmpTrue;
+                                   }));
+          if (result->aggregates_[i].IsNull()) {
+            Swap(result->aggregates_[i], res);
+          } else {
+            if (result->aggregates_[i].CompareLessThan(res) == CmpBool::CmpTrue) {
+              Swap(result->aggregates_[i], res);
+            }
+          }
           break;
       }
     }
@@ -142,7 +190,7 @@ class SimpleAggregationHashTable {
   const std::vector<AbstractExpressionRef> &agg_exprs_;
   /** The types of aggregations that we have */
   const std::vector<AggregationType> &agg_types_;
-};
+};  // namespace bustub
 
 /**
  * AggregationExecutor executes an aggregation operation (e.g. COUNT, SUM, MIN, MAX)
@@ -180,7 +228,14 @@ class AggregationExecutor : public AbstractExecutor {
   /** @return The tuple as an AggregateKey */
   auto MakeAggregateKey(const Tuple *tuple) -> AggregateKey {
     std::vector<Value> keys;
+    unsigned int idx = 0;
+
     for (const auto &expr : plan_->GetGroupBys()) {
+      ColumnValueExpression *column_expression = dynamic_cast<ColumnValueExpression *>(expr.get());
+      if (column_expression) {
+        name_to_group_id_[child_executor_->GetOutputSchema().GetColumn(column_expression->GetColIdx()).GetName()] =
+            idx++;
+      }
       keys.emplace_back(expr->Evaluate(tuple, child_executor_->GetOutputSchema()));
     }
     return {keys};
@@ -203,9 +258,15 @@ class AggregationExecutor : public AbstractExecutor {
   std::unique_ptr<AbstractExecutor> child_executor_;
 
   /** Simple aggregation hash table */
-  // TODO(Student): Uncomment SimpleAggregationHashTable aht_;
+  SimpleAggregationHashTable aht_;
 
   /** Simple aggregation hash table iterator */
-  // TODO(Student): Uncomment SimpleAggregationHashTable::Iterator aht_iterator_;
+  SimpleAggregationHashTable::Iterator aht_iterator_;
+
+  /** Flag to mark that the iteration has begin*/
+  bool begin_iterate_{false};
+
+  /**Name maps to group_bys id*/
+  std::unordered_map<std::string, int> name_to_group_id_;
 };
 }  // namespace bustub
