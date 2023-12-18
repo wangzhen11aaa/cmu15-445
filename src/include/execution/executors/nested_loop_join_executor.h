@@ -55,6 +55,22 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
  private:
   /** The NestedLoopJoin plan node to be executed. */
   const NestedLoopJoinPlanNode *plan_;
+  std::unique_ptr<AbstractExecutor> left_executor_;
+  std::unique_ptr<AbstractExecutor> right_executor_;
+
+  /** Left tuple schema*/
+  Schema left_schema_;
+  /** Right tuple schema*/
+  Schema right_schema_;
+  /** Join output tuple schema*/
+  Schema join_output_schema_;
+
+  /** Join type*/
+  JoinType join_type_;
+  /** Map from output schema index to input source schema
+   * items in pair: 0:left_executor, x: column_index in left tuple, 1: right_executor, y: column_index in right tuple.
+   */
+  std::vector<std::pair<int, int>> maps_;
 };
 
 }  // namespace bustub

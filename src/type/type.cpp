@@ -282,7 +282,7 @@ auto Type::GetData(const Value &val __attribute__((unused))) const -> const char
 
 // Get the length of the variable length data
 auto Type::GetLength(const Value &val __attribute__((unused))) const -> uint32_t {
-  throw NotImplementedException("GetLength not implemented");
+  return GetTypeSize(val.GetTypeId());
 }
 
 // Access the raw varlen data stored from the tuple storage
