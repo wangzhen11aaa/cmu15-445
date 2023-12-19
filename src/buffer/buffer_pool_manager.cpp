@@ -210,6 +210,7 @@ auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
 
 auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
   auto pagePtr = FetchPage(page_id);
+  pagePtr->pin_count_ = 1;
   pagePtr->WLatch();
   return {this, pagePtr};
   // return {this, nullptr};

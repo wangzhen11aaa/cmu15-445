@@ -36,13 +36,15 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   if (indexes_.size() == 0) {
     if (child_executor_->Next(tuple, rid)) {
       table_info_->table_->UpdateTupleMeta(negative_meta, *rid);
-      std::vector<Value> tuple_values{};
-      auto fields_num = plan_->target_expressions_.size();
-      Schema outputSchema = plan_->OutputSchema();
-      for (size_t i = 0; i < fields_num; i++) {
-        tuple_values.push_back(plan_->target_expressions_[i]->Evaluate(tuple, plan_->OutputSchema()));
+      Schema input_schema = child_executor_->GetOutputSchema();
+      Schema update_schema = plan_->OutputSchema();
+
+      std::vector<Value> tuple_values(input_schema.GetColumnCount(), Value{});
+      for (size_t i = 0; i < input_schema.GetColumnCount(); i++) {
+        tuple_values[i] = plan_->target_expressions_[i]->Evaluate(tuple, input_schema);
       }
-      Tuple tuple_to_insert{tuple_values, &table_info_->schema_};
+
+      Tuple tuple_to_insert{tuple_values, &input_schema};
       table_info_->table_->InsertTuple(positive_meta, tuple_to_insert);
       return true;
     }

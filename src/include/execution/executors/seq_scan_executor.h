@@ -52,6 +52,6 @@ class SeqScanExecutor : public AbstractExecutor {
   const SeqScanPlanNode *plan_;
 
   /**The Iterator of the TableHeap*/
-  TableIterator table_iterator_{nullptr, {0, 0}, {0, 0}};
+  TableIterator table_iterator_{nullptr, {INVALID_PAGE_ID, 0}, {INVALID_PAGE_ID, 0}};
 };
 }  // namespace bustub

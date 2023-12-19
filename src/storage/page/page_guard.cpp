@@ -55,13 +55,17 @@ auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & 
   return *this;
 }
 
-void ReadPageGuard::Drop() { guard_.Drop(); }
+void ReadPageGuard::Drop() {
+  guard_.Drop();
+  if (guard_.page_->GetPinCount() <= 0) {
+    guard_.page_->RUnlatch();
+    guard_.page_ = nullptr;
+  }
+}
 
 ReadPageGuard::~ReadPageGuard() {
   if (guard_.page_ != nullptr) {
     Drop();
-    // std::cout << "ReadPageGuard destructed, page_ " << guard_.PageId() << " Released" << std::endl;
-    guard_.page_->RUnlatch();
   }
 }  // NOLINT
 
@@ -72,14 +76,19 @@ auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard
   return *this;
 }
 
-void WritePageGuard::Drop() { guard_.Drop(); }
+void WritePageGuard::Drop() {
+  guard_.Drop();
+  if (guard_.page_->GetPinCount() <= 0) {
+    guard_.page_->WUnlatch();
+    guard_.page_ = nullptr;
+  }
+}
 
 WritePageGuard::~WritePageGuard() {
   // std::cout << "WritePageGuard destructed" << std::endl;
   if (guard_.page_ != nullptr) {
     // std::cout << "WritePageGuard destructed, page_ " << guard_.PageId() << " Released" << std::endl;
     Drop();
-    guard_.page_->WUnlatch();
   }
 }  // NOLINT
 
