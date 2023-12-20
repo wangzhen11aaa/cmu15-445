@@ -17,10 +17,10 @@
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
+#include "execution/expressions/column_value_expression.h"
 #include "execution/plans/seq_scan_plan.h"
 #include "execution/plans/sort_plan.h"
 #include "storage/table/tuple.h"
-
 namespace bustub {
 
 /**
@@ -52,5 +52,45 @@ class SortExecutor : public AbstractExecutor {
  private:
   /** The sort plan node to be executed */
   const SortPlanNode *plan_;
-};
+
+  /** Store all the tuples*/
+  std::vector<Tuple> tuples_;
+
+  /** Iteartor the vector*/
+  std::vector<Tuple>::iterator iter_;
+
+  /** Child executor for pull data*/
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  /**Comparator for Value*/
+  class ValueComparator {
+   public:
+    void SetOrderBy(std::pair<OrderByType, AbstractExpressionRef> *order_by_expr) { order_by_pair_ = order_by_expr; }
+
+    bool operator()(const Tuple &v1, const Tuple &v2) const {
+      auto [order_type, column_value_expression] = *order_by_pair_;
+      if (order_type == OrderByType::ASC) {
+        auto compare_result = column_value_expression.get()
+                                  ->Evaluate(&v1, *schema_)
+                                  .CompareLessThanEquals(column_value_expression.get()->Evaluate(&v2, *schema_));
+        if (compare_result == CmpBool::CmpTrue) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        auto compare_result = column_value_expression.get()
+                                  ->Evaluate(&v1, *schema_)
+                                  .CompareGreaterThanEquals(column_value_expression.get()->Evaluate(&v2, *schema_));
+        if (compare_result == CmpBool::CmpTrue) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    std::pair<OrderByType, AbstractExpressionRef> *order_by_pair_;
+    const Schema *schema_;
+  };
+};  // namespace bustub
 }  // namespace bustub
