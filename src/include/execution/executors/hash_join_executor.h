@@ -54,6 +54,38 @@ class HashJoinExecutor : public AbstractExecutor {
  private:
   /** The HashJoin plan node to be executed. */
   const HashJoinPlanNode *plan_;
+  /** Compare structure*/
+  struct ValueCompare {
+    bool operator()(const Value &v1, const Value &v2) const { return v1.CompareLessThan(v2) == CmpBool::CmpTrue; }
+  };
+  /** The hash table is just a map from aggregate keys to aggregate values */
+  typedef std::map<Value, Tuple, ValueCompare> HashMapType;
+
+  /** HashMap for keys of right table*/
+  std::unordered_map<std::string, HashMapType> map_;
+
+  /* Left executor*/
+  std::unique_ptr<AbstractExecutor> left_child_;
+  /** Right executor*/
+  std::unique_ptr<AbstractExecutor> right_child_;
+
+  /* Hash initiallized flag*/
+  bool hash_table_initialized{false};
+
+  /* Join_type*/
+  JoinType join_type_;
+
+  /** Left tuple schema*/
+  Schema left_schema_;
+  /** Right tuple schema*/
+  Schema right_schema_;
+  /** Join output tuple schema*/
+  Schema join_output_schema_;
+
+  /** Map from output schema index to input source schema
+   * items in pair: 0:left_executor, x: column_index in left tuple, 1: right_executor, y: column_index in right tuple.
+   */
+  std::vector<std::pair<int, int>> pos_map_to_idx_;
 };
 
 }  // namespace bustub
