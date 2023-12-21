@@ -19,6 +19,7 @@
 
 #include "binder/bound_order_by.h"
 #include "catalog/catalog.h"
+#include "execution/executors/sort_executor.h"
 #include "execution/expressions/abstract_expression.h"
 #include "execution/plans/abstract_plan.h"
 

@@ -23,6 +23,39 @@
 #include "storage/table/tuple.h"
 namespace bustub {
 
+class ValueComparator {
+ public:
+  void SetOrderBy(std::pair<OrderByType, AbstractExpressionRef> *order_by_expr) { order_by_pair_ = order_by_expr; }
+
+  void SetSchema() {}
+
+  bool operator()(const Tuple &v1, const Tuple &v2) const {
+    auto [order_type, abstract_value_expression] = *order_by_pair_;
+    ColumnValueExpression *column_value_expression =
+        dynamic_cast<ColumnValueExpression *>(abstract_value_expression.get());
+    if (order_type == OrderByType::ASC) {
+      auto compare_result = column_value_expression->Evaluate(&v1, *schema_)
+                                .CompareLessThanEquals(column_value_expression->Evaluate(&v2, *schema_));
+      if (compare_result == CmpBool::CmpTrue) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      auto compare_result = column_value_expression->Evaluate(&v1, *schema_)
+                                .CompareGreaterThanEquals(column_value_expression->Evaluate(&v2, *schema_));
+      if (compare_result == CmpBool::CmpTrue) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  std::pair<OrderByType, AbstractExpressionRef> *order_by_pair_;
+  const Schema *schema_;
+};
+
 /**
  * The SortExecutor executor executes a sort.
  */
@@ -62,35 +95,6 @@ class SortExecutor : public AbstractExecutor {
   /** Child executor for pull data*/
   std::unique_ptr<AbstractExecutor> child_executor_;
   /**Comparator for Value*/
-  class ValueComparator {
-   public:
-    void SetOrderBy(std::pair<OrderByType, AbstractExpressionRef> *order_by_expr) { order_by_pair_ = order_by_expr; }
 
-    bool operator()(const Tuple &v1, const Tuple &v2) const {
-      auto [order_type, column_value_expression] = *order_by_pair_;
-      if (order_type == OrderByType::ASC) {
-        auto compare_result = column_value_expression.get()
-                                  ->Evaluate(&v1, *schema_)
-                                  .CompareLessThanEquals(column_value_expression.get()->Evaluate(&v2, *schema_));
-        if (compare_result == CmpBool::CmpTrue) {
-          return true;
-        } else {
-          return false;
-        }
-      } else {
-        auto compare_result = column_value_expression.get()
-                                  ->Evaluate(&v1, *schema_)
-                                  .CompareGreaterThanEquals(column_value_expression.get()->Evaluate(&v2, *schema_));
-        if (compare_result == CmpBool::CmpTrue) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-    }
-
-    std::pair<OrderByType, AbstractExpressionRef> *order_by_pair_;
-    const Schema *schema_;
-  };
 };  // namespace bustub
 }  // namespace bustub

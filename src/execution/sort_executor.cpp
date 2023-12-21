@@ -7,15 +7,12 @@ SortExecutor::SortExecutor(ExecutorContext *exec_ctx, const SortPlanNode *plan,
     : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {}
 
 void SortExecutor::Init() {
-  Tuple tuple;
+  Tuple tmp_tuple;
   RID rid;
-  while (child_executor_.get()->Next(&tuple, &rid)) {
+  while (child_executor_.get()->Next(&tmp_tuple, &rid)) {
     // TODO: If the executor can return the numbers, we can resize to the number.
-    tuples_.push_back(tuple);
+    tuples_.push_back(tmp_tuple);
   }
-
-  ValueComparator comparator{};
-  comparator.schema_ = &(plan_->OutputSchema());
 
   bool first_order_flag = true;
   auto it0 = tuples_.begin(), it1 = tuples_.end();
