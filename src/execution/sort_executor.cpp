@@ -14,32 +14,13 @@ void SortExecutor::Init() {
     tuples_.push_back(tmp_tuple);
   }
 
-  bool first_order_flag = true;
-  auto it0 = tuples_.begin(), it1 = tuples_.end();
   std::pair<OrderByType, AbstractExpressionRef> prev_order{};
-  ValueComparator prev_comparator{}, curr_comparator{};
+  ValueComparator curr_comparator{};
   curr_comparator.schema_ = &plan_->OutputSchema();
-  for (auto order_exp : plan_->order_bys_) {
-    if (first_order_flag) {
-      curr_comparator.SetOrderBy(&order_exp);
-      std::sort(it0, it1, curr_comparator);
-      prev_comparator = curr_comparator;
-      first_order_flag = false;
-    } else {
-      it0 = tuples_.begin();
-      it1 = std::upper_bound(it0, tuples_.end(), *it0, prev_comparator);
-
-      curr_comparator.SetOrderBy(&order_exp);
-
-      while (it0 != tuples_.end()) {
-        std::sort(it0, it1, curr_comparator);
-        it0 = it1;
-        it1 = std::upper_bound(it0, tuples_.end(), *it0, prev_comparator);
-      }
-
-      prev_comparator = curr_comparator;
-    }
-  }
+  curr_comparator.SetOrderBy(&plan_->order_bys_);
+  // E.g:
+  // order by col1 desc, col2 asc
+  std::sort(tuples_.begin(), tuples_.end(), curr_comparator);
 
   iter_ = tuples_.begin();
 }  // namespace bustub
