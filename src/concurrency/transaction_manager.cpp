@@ -40,6 +40,7 @@ auto TransactionManager::Begin(IsolationLevel isolation_level) -> Transaction * 
   auto txn_id = next_txn_id_++;
   auto txn = std::make_unique<Transaction>(txn_id, isolation_level);
   auto *txn_ref = txn.get();
+  txn->SetReadTs(running_txns_.commit_ts_);
   txn_map_.insert(std::make_pair(txn_id, std::move(txn)));
 
   // TODO(fall2023): set the timestamps here. Watermark updated below.
@@ -55,6 +56,8 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
 
   // TODO(fall2023): acquire commit ts!
 
+  txn->commit_ts_ = running_txns_.commit_ts_ + 1;
+
   if (txn->state_ != TransactionState::RUNNING) {
     throw Exception("txn not in running state");
   }
@@ -68,9 +71,7 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
   }
 
   // TODO(fall2023): Implement the commit logic!
-
   std::unique_lock<std::shared_mutex> lck(txn_map_mutex_);
-
   // TODO(fall2023): set commit timestamp + update last committed timestamp here.
 
   txn->state_ = TransactionState::COMMITTED;
@@ -90,6 +91,7 @@ void TransactionManager::Abort(Transaction *txn) {
   std::unique_lock<std::shared_mutex> lck(txn_map_mutex_);
   txn->state_ = TransactionState::ABORTED;
   running_txns_.RemoveTxn(txn->read_ts_);
+  // txn_map_.erase(txn->GetTransactionId());
 }
 
 void TransactionManager::GarbageCollection() { UNIMPLEMENTED("not implemented"); }

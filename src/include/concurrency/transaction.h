@@ -116,6 +116,8 @@ class Transaction {
   /** @return the read ts */
   inline auto GetReadTs() const -> timestamp_t { return read_ts_; }
 
+  inline auto SetReadTs(timestamp_t read_ts) -> void { read_ts_.store(read_ts); }
+
   /** @return the commit ts */
   inline auto GetCommitTs() const -> timestamp_t { return commit_ts_; }
 
