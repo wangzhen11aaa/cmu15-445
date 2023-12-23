@@ -25,34 +25,44 @@ namespace bustub {
 
 class ValueComparator {
  public:
-  void SetOrderBy(std::pair<OrderByType, AbstractExpressionRef> *order_by_expr) { order_by_pair_ = order_by_expr; }
+  void SetOrderBy(const std::vector<std::pair<OrderByType, AbstractExpressionRef>> *order_by_exprs) {
+    order_by_pairs_ = order_by_exprs;
+  }
 
   void SetSchema() {}
 
   bool operator()(const Tuple &v1, const Tuple &v2) const {
-    auto [order_type, abstract_value_expression] = *order_by_pair_;
-    ColumnValueExpression *column_value_expression =
-        dynamic_cast<ColumnValueExpression *>(abstract_value_expression.get());
-    if (order_type == OrderByType::ASC) {
-      auto compare_result = column_value_expression->Evaluate(&v1, *schema_)
-                                .CompareLessThanEquals(column_value_expression->Evaluate(&v2, *schema_));
-      if (compare_result == CmpBool::CmpTrue) {
-        return true;
+    bool comp_ret = true;
+    for (auto order_by_pair : *order_by_pairs_) {
+      auto [order_type, abstract_value_expression] = order_by_pair;
+      ColumnValueExpression *column_value_expression =
+          dynamic_cast<ColumnValueExpression *>(abstract_value_expression.get());
+      if (order_type == OrderByType::ASC) {
+        auto compare_result = column_value_expression->Evaluate(&v1, *schema_)
+                                  .CompareLessThan(column_value_expression->Evaluate(&v2, *schema_));
+        if (compare_result == CmpBool::CmpTrue) {
+          comp_ret = true;
+          break;
+        } else {
+          comp_ret = false;
+          break;
+        }
       } else {
-        return false;
-      }
-    } else {
-      auto compare_result = column_value_expression->Evaluate(&v1, *schema_)
-                                .CompareGreaterThanEquals(column_value_expression->Evaluate(&v2, *schema_));
-      if (compare_result == CmpBool::CmpTrue) {
-        return true;
-      } else {
-        return false;
+        auto compare_result = column_value_expression->Evaluate(&v1, *schema_)
+                                  .CompareGreaterThan(column_value_expression->Evaluate(&v2, *schema_));
+        if (compare_result == CmpBool::CmpTrue) {
+          comp_ret = true;
+          break;
+        } else {
+          comp_ret = false;
+          break;
+        }
       }
     }
+    return comp_ret;
   }
 
-  std::pair<OrderByType, AbstractExpressionRef> *order_by_pair_;
+  const std::vector<std::pair<OrderByType, AbstractExpressionRef>> *order_by_pairs_;
   const Schema *schema_;
 };
 

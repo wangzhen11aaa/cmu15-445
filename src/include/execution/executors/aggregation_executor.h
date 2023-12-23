@@ -40,14 +40,14 @@ class SimpleAggregationHashTable {
    * @param agg_exprs the aggregation expressions
    * @param agg_types the types of aggregations
    */
-  SimpleAggregationHashTable(const std::vector<AbstractExpressionRef> &agg_exprs,
-                             const std::vector<AggregationType> &agg_types)
+  SimpleAggregationHashTable(const std::vector<AbstractExpressionRef> agg_exprs,
+                             const std::vector<AggregationType> agg_types)
       : agg_exprs_{agg_exprs}, agg_types_{agg_types} {}
 
   /** @return The initial aggregate value for this aggregation executor */
   auto GenerateInitialAggregateValue() -> AggregateValue {
     std::vector<Value> values{};
-    for (const auto &agg_type : agg_types_) {
+    for (AggregationType agg_type : agg_types_) {
       switch (agg_type) {
         case AggregationType::CountStarAggregate:
           // Count start starts at zero.
@@ -87,8 +87,8 @@ class SimpleAggregationHashTable {
             Swap(result->aggregates_[i], res);
           } else {
             result->aggregates_[i] = result->aggregates_[i].Add(res);
-            break;
           }
+          break;
         case AggregationType::SumAggregate:
           std::for_each(std::begin(input.aggregates_), std::end(input.aggregates_), [&](const Value &v0) {
             if (!v0.IsNull()) {
@@ -187,9 +187,9 @@ class SimpleAggregationHashTable {
   /** The hash table is just a map from aggregate keys to aggregate values */
   std::unordered_map<AggregateKey, AggregateValue> ht_{};
   /** The aggregate expressions that we have */
-  const std::vector<AbstractExpressionRef> &agg_exprs_;
+  const std::vector<AbstractExpressionRef> agg_exprs_;
   /** The types of aggregations that we have */
-  const std::vector<AggregationType> &agg_types_;
+  const std::vector<AggregationType> agg_types_;
 };  // namespace bustub
 
 /**
@@ -229,14 +229,17 @@ class AggregationExecutor : public AbstractExecutor {
   auto MakeAggregateKey(const Tuple *tuple) -> AggregateKey {
     std::vector<Value> keys;
     unsigned int idx = 0;
-
-    for (const auto &expr : plan_->GetGroupBys()) {
-      ColumnValueExpression *column_expression = dynamic_cast<ColumnValueExpression *>(expr.get());
-      if (column_expression) {
-        name_to_group_id_[child_executor_->GetOutputSchema().GetColumn(column_expression->GetColIdx()).GetName()] =
-            idx++;
+    if (plan_->GetGroupBys().size() == 0) {
+      keys.emplace_back(Value{ValueFactory::GetIntegerValue(1)});
+    } else {
+      for (const auto &expr : plan_->GetGroupBys()) {
+        ColumnValueExpression *column_expression = dynamic_cast<ColumnValueExpression *>(expr.get());
+        if (column_expression) {
+          name_to_group_id_[child_executor_->GetOutputSchema().GetColumn(column_expression->GetColIdx()).GetName()] =
+              idx++;
+        }
+        keys.emplace_back(expr->Evaluate(tuple, child_executor_->GetOutputSchema()));
       }
-      keys.emplace_back(expr->Evaluate(tuple, child_executor_->GetOutputSchema()));
     }
     return {keys};
   }

@@ -41,17 +41,10 @@ class HeapForTopN {
       curr_index_++;
       HeapifyFromLeaf();
     } else {
-      bool move_up = true;
       auto tuple_root = tuples_[1];
-      for (auto order_exp : *order_bys_ptr_) {
-        value_comparator_.SetOrderBy(&order_exp);
-        // Verify tuples with each order_exp.
-        if (value_comparator_(tuple_root, tuple) == false) {
-          move_up = false;
-        }
-      }
-      // If the tuple is greater than the max_heap's top or lesser than the min_heap's top, continue;
-      if (move_up) {
+      value_comparator_.SetOrderBy(order_bys_ptr_);
+      // Verify tuples with each order_exp.
+      if (value_comparator_(tuple_root, tuple) == true) {
         tuples_[1] = tuple;
         HeapifyFromRoot(1);
       }
@@ -73,34 +66,17 @@ class HeapForTopN {
   void HeapifyFromRoot(int i) {
     int left_child_i = left_child(i);
     int right_child_i = right_child(i);
+    value_comparator_.SetOrderBy(order_bys_ptr_);
     while (right_child_i <= curr_index_ && right_child_i <= curr_index_) {
       auto tuple_left = tuples_[left_child_i];
       auto tuple_right = tuples_[right_child_i];
       int target_index;
-      bool move_up = true;
-      for (auto order_exp : *order_bys_ptr_) {
-        value_comparator_.SetOrderBy(&order_exp);
-        if (value_comparator_(tuple_left, tuple_right) == false) {
-          target_index = left_child_i;
-          move_up = false;
-          break;
-        }
-      }
-      if (move_up) {
+      if (value_comparator_(tuple_left, tuple_right) == false) {
+        target_index = left_child_i;
+      } else {
         target_index = right_child_i;
       }
-
-      auto tuple_root = tuples_[i];
-      move_up = true;
-      for (auto order_exp : *order_bys_ptr_) {
-        value_comparator_.SetOrderBy(&order_exp);
-        if (value_comparator_(tuple_root, tuples_[target_index]) == false) {
-          move_up = false;
-          break;
-        }
-      }
-
-      if (move_up) {
+      if (value_comparator_(tuples_[target_index], tuples_[i]) == true) {
         std::swap(tuples_[i], tuples_[target_index]);
         i = target_index;
         left_child_i = left_child(i);
@@ -110,15 +86,7 @@ class HeapForTopN {
       }
     }
     if (left_child_i <= curr_index_) {
-      bool move_up = true;
-      for (auto order_exp : *order_bys_ptr_) {
-        value_comparator_.SetOrderBy(&order_exp);
-        if (value_comparator_(tuples_[i], tuples_[left_child_i]) == false) {
-          move_up = false;
-          break;
-        }
-      }
-      if (move_up) {
+      if (value_comparator_(tuples_[i], tuples_[left_child_i]) == true) {
         std::swap(tuples_[i], tuples_[left_child_i]);
       }
     }
@@ -130,20 +98,11 @@ class HeapForTopN {
       auto p_i = parent(i);
       auto tuple_i = tuples_[i];
       auto tuple_p = tuples_[p_i];
-      bool move_up = true;
-      for (auto order_exp : *order_bys_ptr_) {
-        value_comparator_.SetOrderBy(&order_exp);
-        // Verify tuples with each order_exp.
-        if (value_comparator_(tuple_i, tuple_p) == false) {
-          move_up = false;
-        }
-      }
-      // Move the tuple up to the heap-root.
-      if (move_up) {
+      value_comparator_.SetOrderBy(order_bys_ptr_);
+      // Verify tuples with each order_exp.
+      if (value_comparator_(tuple_i, tuple_p) == true) {
         std::swap(tuple_i, tuple_p);
         i = p_i;
-      } else {
-        break;
       }
     }
   }
