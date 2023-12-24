@@ -10,10 +10,57 @@
 
 namespace bustub {
 
+void ConstructPartialValues(const Schema *partial_schema, Tuple &tuple, std::vector<Value> &values) {
+  for (uint32_t i = 0; i < partial_schema->GetColumns().size(); i++) {
+    values.push_back(tuple.GetValue(partial_schema, i));
+  }
+}
+Schema ConstructParitialSchema(const Schema *schema, std::vector<bool> &modified_fileds) {
+  std::vector<Column> partial_columns;
+  for (uint32_t i = 0; i < schema->GetColumns().size(); i++) {
+    if (modified_fileds[i]) {
+      partial_columns.push_back(schema->GetColumn(i));
+    }
+  }
+  return Schema{partial_columns};
+}
+
 auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const TupleMeta &base_meta,
                       const std::vector<UndoLog> &undo_logs) -> std::optional<Tuple> {
-  UNIMPLEMENTED("not implemented");
-}
+  Tuple curr_tuple = base_tuple;
+  if (base_meta.is_deleted_) {
+    curr_tuple = Tuple{};
+  }
+  std::vector<Value> values{};
+  for (auto undo_log : undo_logs) {
+    values.resize(schema->GetColumns().size());
+    if (undo_log.is_deleted_) {
+      // values stay unchaged.
+      curr_tuple = {};
+      continue;
+    }
+    Schema partial_schema = ConstructParitialSchema(schema, undo_log.modified_fields_);
+
+    std::vector<Value> partial_values;
+    if (!IsTupleContentEqual(undo_log.tuple_, Tuple{})) {
+      ConstructPartialValues(&partial_schema, undo_log.tuple_, partial_values);
+    }
+    uint32_t j = 0;
+    for (uint32_t i = 0; i < schema->GetColumns().size(); i++) {
+      if (undo_log.modified_fields_[i]) {
+        values[i] = partial_values[j++];
+        continue;
+      }
+      values[i] = curr_tuple.GetValue(schema, i);
+    }
+    curr_tuple = {values, schema};
+  }
+  if (IsTupleContentEqual(curr_tuple, Tuple{})) {
+    return std::nullopt;
+  } else {
+    return std::make_optional<Tuple>(curr_tuple);
+  }
+}  // namespace bustub
 
 void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const TableInfo *table_info,
                TableHeap *table_heap) {
