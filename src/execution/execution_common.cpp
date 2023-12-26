@@ -65,12 +65,38 @@ auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const Tuple
 void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const TableInfo *table_info,
                TableHeap *table_heap) {
   // always use stderr for printing logs...
-  fmt::println(stderr, "debug_hook: {}", info);
+  fmt::println(stderr, "debug_hook: {}, table name: {}", info, table_info->name_);
 
-  fmt::println(
-      stderr,
-      "You see this line of text because you have not implemented `TxnMgrDbg`. You should do this once you have "
-      "finished task 2. Implementing this helper function will save you a lot of time for debugging in later tasks.");
+  auto iter = table_heap->MakeIterator();
+  RID rid;
+  do {
+    rid = iter.GetRID();
+    auto [tuple_meta_bind, tuple_bind] = iter.GetTuple();
+    fmt::println(stderr, "RID={}/{}, ts={}, tuple = {}", rid.GetPageId(), rid.GetSlotNum(), tuple_meta_bind.ts_,
+                 tuple_bind.ToString(&table_info->schema_));
+
+    // First undolog
+    auto undo_link_opt = txn_mgr->GetUndoLink(rid);
+    auto undo_link = undo_link_opt.value();
+    while (undo_link.IsValid()) {
+      auto undo_log = txn_mgr->GetUndoLog(undo_link);
+      if (undo_log.is_deleted_) {
+        fmt::println(stderr, "txn {}, is_delete={}, ts={}, tuple = {}", undo_link.prev_txn_,
+                     undo_log.is_deleted_ ? std::string{"deleted"} : std::string{"not-deleted"}, undo_log.ts_, "");
+      } else {
+        fmt::println(stderr, "txn {}, is_delete={}, ts={}, tuple = {}", undo_link.prev_txn_,
+                     undo_log.is_deleted_ ? std::string{"deleted"} : std::string{"not-deleted"}, undo_log.ts_,
+                     undo_log.tuple_.ToString(&table_info->schema_));
+      }
+      undo_link = undo_log.prev_version_;
+    }
+  } while (!(++iter).IsEnd());
+
+  // fmt::println(
+  //     stderr,
+  //     "You see this line of text because you have not implemented `TxnMgrDbg`. You should do this once you have "
+  //     "finished task 2. Implementing this helper function will save you a lot of time for debugging in later
+  //     tasks.");
 
   // We recommend implementing this function as traversing the table heap and print the version chain. An example output
   // of our reference solution:
