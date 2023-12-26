@@ -55,7 +55,7 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
   std::unique_lock<std::mutex> commit_lck(commit_mutex_);
 
   // TODO(fall2023): acquire commit ts!
-
+  // Newest commit_ts_.
   txn->commit_ts_ = running_txns_.commit_ts_ + 1;
 
   if (txn->state_ != TransactionState::RUNNING) {
@@ -71,6 +71,15 @@ auto TransactionManager::Commit(Transaction *txn) -> bool {
   }
 
   // TODO(fall2023): Implement the commit logic!
+  // tuple's meta now is txn_id + TXN_START_ID. Need to set to the commit_ts_ now.
+  for (auto &[table_oid_t, rid_set] : txn->GetWriteSets()) {
+    auto table_heap = catalog_->GetTable(table_oid_t)->table_.get();
+    for (auto rid : rid_set) {
+      auto origin_metadata = table_heap->GetTupleMeta(rid);
+      origin_metadata.ts_ = txn->commit_ts_;
+      table_heap->UpdateTupleMeta(origin_metadata, rid);
+    }
+  }
   std::unique_lock<std::shared_mutex> lck(txn_map_mutex_);
   // TODO(fall2023): set commit timestamp + update last committed timestamp here.
 

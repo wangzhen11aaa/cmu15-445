@@ -77,18 +77,20 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
 
     // First undolog
     auto undo_link_opt = txn_mgr->GetUndoLink(rid);
-    auto undo_link = undo_link_opt.value();
-    while (undo_link.IsValid()) {
-      auto undo_log = txn_mgr->GetUndoLog(undo_link);
-      if (undo_log.is_deleted_) {
-        fmt::println(stderr, "txn {}, is_delete={}, ts={}, tuple = {}", undo_link.prev_txn_,
-                     undo_log.is_deleted_ ? std::string{"deleted"} : std::string{"not-deleted"}, undo_log.ts_, "");
-      } else {
-        fmt::println(stderr, "txn {}, is_delete={}, ts={}, tuple = {}", undo_link.prev_txn_,
-                     undo_log.is_deleted_ ? std::string{"deleted"} : std::string{"not-deleted"}, undo_log.ts_,
-                     undo_log.tuple_.ToString(&table_info->schema_));
+    if (undo_link_opt.has_value()) {
+      auto undo_link = undo_link_opt.value();
+      while (undo_link.IsValid()) {
+        auto undo_log = txn_mgr->GetUndoLog(undo_link);
+        if (undo_log.is_deleted_) {
+          fmt::println(stderr, "txn {}, is_delete={}, ts={}, tuple = {}", undo_link.prev_txn_,
+                       undo_log.is_deleted_ ? std::string{"deleted"} : std::string{"not-deleted"}, undo_log.ts_, "");
+        } else {
+          fmt::println(stderr, "txn {}, is_delete={}, ts={}, tuple = {}", undo_link.prev_txn_,
+                       undo_log.is_deleted_ ? std::string{"deleted"} : std::string{"not-deleted"}, undo_log.ts_,
+                       undo_log.tuple_.ToString(&table_info->schema_));
+        }
+        undo_link = undo_log.prev_version_;
       }
-      undo_link = undo_log.prev_version_;
     }
   } while (!(++iter).IsEnd());
 
@@ -112,6 +114,6 @@ void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const Table
   // RID=0/3 ts=txn6 <del marker> tuple=(<NULL>, <NULL>, <NULL>)
   //   txn6@0 (6, <NULL>, <NULL>) ts=2
   //   txn3@1 (7, _, _) ts=1
-}
+}  // namespace bustub
 
 }  // namespace bustub
